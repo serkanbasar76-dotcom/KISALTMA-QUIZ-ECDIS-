@@ -1,5 +1,6 @@
 import streamlit as st
 import random
+import time
 
 # --- VERİ SETİ ---
 data = [
@@ -49,21 +50,97 @@ data = [
     {"abbr": "XTD", "eng": "Cross Track Distance", "tr": "Rotadan Sapma Değeri"}
 ]
 
-st.set_page_config(page_title="Başar Teknik Eğitim", layout="centered")
+st.set_page_config(page_title="Başar Eğitim Sistemi", layout="centered", page_icon="⚓")
 
-# Tasarım İyileştirmeleri
+# --- GELİŞMİŞ TASARIM VE KUTLAMA EFEKTLERİ ---
 st.markdown("""
     <style>
-    .stButton>button { width: 100%; height: 3.5em; font-weight: bold; }
-    /* Radio buton etiketlerini daha görünür yap */
-    div[data-testid="stRadio"] > label { font-size: 20px !important; font-weight: bold; color: #1E3A8A !important; }
-    h1 { color: #1E3A8A; text-align: center; }
+    /* Ana Arkaplan (Deniz Mavisi Tonları) */
+    .stApp {
+        background: linear-gradient(135deg, #f0f8ff 0%, #e6f2ff 100%);
+    }
+
+    /* Başlık Alanı (Logo) - Lacivert Zeminli */
+    .header-box {
+        background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
+        padding: 25px;
+        border-radius: 15px;
+        text-align: center;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        border: 3px solid #ffffff;
+    }
+
+    /* Daire İçinde Çıpa Simgesi */
+    .circle-anchor {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 60px;
+        height: 60px;
+        background-color: #ffffff;
+        border-radius: 50%;
+        color: #1E3A8A;
+        font-size: 30px;
+        font-weight: bold;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        margin: 0 15px;
+        vertical-align: middle;
+    }
+
+    /* Başlık Metni (Metin Değiştirildi) */
+    .header-text {
+        color: #ffffff !important;
+        font-size: 32px !important;
+        font-weight: 800 !important;
+        display: inline-block;
+        vertical-align: middle;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* Buton Tasarımları */
+    .stButton>button {
+        width: 100%;
+        height: 3.5em;
+        font-weight: bold;
+        font-size: 16px;
+        border-radius: 10px;
+        background: #ffffff;
+        color: #1E3A8A;
+        border: 2px solid #1E3A8A;
+        transition: all 0.3s;
+    }
+    
+    .stButton>button:hover {
+        background: #1E3A8A;
+        color: #ffffff;
+    }
+
+    /* Soru ve İlan Kutuları */
+    .stInfo, .stSuccess, .stError {
+        border-radius: 10px;
+        padding: 20px;
+    }
+    
+    h2, h3 { text-align: center; color: #1E3A8A; }
+
+    /* Konfeti Efekti (Konfeti patladığında arka planı şeffaf yapar) */
+    .confetti-active {
+        background-color: transparent !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# Logo
-st.title("⚓ BAŞAR TEKNİK EĞİTİM")
-st.divider()
+# --- LOGO VE BAŞLIK ALANI (Yeni Tasarım) ---
+st.markdown(f"""
+    <div class="header-box">
+        <div class="circle-anchor">⚓</div>
+        <div class="header-text">BAŞAR EĞİTİM SİSTEMİ</div>
+        <div class="circle-anchor">⚓</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 # --- SORU ÜRETİCİ ---
 def generate_quiz(is_shuffled):
@@ -97,19 +174,20 @@ if 'page' not in st.session_state:
     st.session_state.score = 0
     st.session_state.history = []
 
-# --- AKIŞ ---
+# --- AKIŞ YÖNETİMİ ---
+
 if st.session_state.page == "GIRIS":
-    st.write("### Soru Sıralaması Seçin:")
+    st.header("ECDIS Sınav Modülü")
     
-    # İstenen değişiklik: Sekme yerine açık seçenekler (Radio)
+    # Açık Seçenek Menüsü (İsteğiniz üzere st.radio ile yapıldı)
     mode = st.radio(
-        label="Uygulama Modu",
+        "Soru Sıralaması Seçin:",
         options=["Sabit (Sıralı)", "Değişken (Karışık)"],
-        label_visibility="collapsed" # Başlığı gizleyip seçenekleri öne çıkarır
+        horizontal=True # Seçenekleri yan yana gösterir, daha modern bir görünüm
     )
     
-    st.write("") # Boşluk
-    if st.button("SINAVA BAŞLA"):
+    st.markdown("<br>", unsafe_allow_html=True) # Boşluk
+    if st.button("SINAVA BAŞLA", key="start_btn"):
         st.session_state.quiz = generate_quiz(mode == "Değişken (Karışık)")
         st.session_state.page = "SINAV"
         st.rerun()
@@ -118,7 +196,7 @@ elif st.session_state.page == "SINAV":
     idx = st.session_state.current_idx
     q = st.session_state.quiz[idx]
     
-    st.write(f"**Soru {idx + 1} / {len(st.session_state.quiz)}**")
+    st.subheader(f"Soru {idx + 1} / {len(st.session_state.quiz)}")
     st.progress((idx + 1) / len(st.session_state.quiz))
     
     st.info(f"### {q['question']}")
@@ -141,24 +219,43 @@ elif st.session_state.page == "SINAV":
 
 elif st.session_state.page == "ANALIZ":
     st.header("🏁 Sınav Tamamlandı")
+    
     total = len(st.session_state.quiz)
     percent = (st.session_state.score / total) * 100
+    
+    # Konfeti Efekti Kontrolü (%80 Üstü)
+    if percent >= 80:
+        # Arka planı şeffaf yapıp konfeti ve balon patlatıyoruz
+        st.markdown('<style>.stApp { background-color: transparent !important; }</style>', unsafe_allow_html=True)
+        st.balloons() # Balonlar
+        # Havai fişek ve konfeti efekti (Streamlit'in varsayılanı konfetidir)
+        time.sleep(0.5)
+        st.success("MUHTEŞEM BİR BAŞARI! 🌟")
+        st.divider()
     
     col1, col2 = st.columns(2)
     col1.metric("Doğru", f"{st.session_state.score} / {total}")
     col2.metric("Başarı Oranı", f"%{percent:.1f}")
     
-    st.divider()
+    if percent < 80:
+        st.info("Harika! Kendinizi daha da geliştirebilirsiniz.")
+    else:
+        st.divider()
+
     st.subheader("Hatalı Soruların Analizi")
     
+    has_errors = False
     for i, item in enumerate(st.session_state.history):
         if not item["is_correct"]:
-            # st.error kullanarak okunabilirliği garantiliyoruz
+            has_errors = True
             st.error(f"**Soru {i+1}:** {item['q']}")
             st.write(f"❌ **Sizin Cevabınız:** {item['user']}")
             st.write(f"✅ **Doğru Cevap:** {item['correct']}")
             st.markdown("---")
             
+    if not has_errors:
+        st.success("Tebrikler! Hiç hata yapmadınız.")
+
     if st.button("Ana Menüye Dön"):
         st.session_state.clear()
         st.rerun()
