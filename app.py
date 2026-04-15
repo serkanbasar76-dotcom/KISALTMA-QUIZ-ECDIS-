@@ -52,78 +52,50 @@ data = [
 
 st.set_page_config(page_title="Başar Eğitim Sistemi", layout="centered")
 
-# --- KUVVETLİ KONTRAST CSS ---
+# --- KUVVETLİ KONTRAST VE TASARIM CSS ---
 st.markdown("""
     <style>
-    /* Arka planı hafif gri-mavi yap ki beyaz kutular patlasın */
     .stApp { background-color: #f0f2f6 !important; }
-
-    /* Tüm temel metinleri koyu lacivert yap (Okunmama sorununu çözer) */
     html, body, [class*="st-"] { color: #001f3f !important; font-weight: 500; }
 
-    /* Logo ve Başlık Tasarımı */
     .header-container {
         background: linear-gradient(90deg, #1E3A8A 0%, #3B82F6 100%);
-        padding: 30px;
-        border-radius: 20px;
-        text-align: center;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        margin-bottom: 40px;
+        padding: 30px; border-radius: 20px; text-align: center;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2); margin-bottom: 40px;
     }
     .anchor-circle {
-        background: white;
-        color: #1E3A8A;
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        margin: 0 20px;
-        vertical-align: middle;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        background: white; color: #1E3A8A; width: 50px; height: 50px;
+        border-radius: 50%; display: inline-flex; align-items: center;
+        justify-content: center; font-size: 24px; margin: 0 20px;
+        vertical-align: middle; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
     .title-text {
-        color: white !important;
-        font-size: 28px !important;
-        font-weight: 900 !important;
-        vertical-align: middle;
+        color: white !important; font-size: 28px !important;
+        font-weight: 900 !important; vertical-align: middle;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
     }
 
-    /* Soru ve Bilgi Kutuları */
     .question-box {
-        background-color: white !important;
-        color: #1E3A8A !important;
-        padding: 25px;
-        border-radius: 15px;
-        border-left: 10px solid #1E3A8A;
-        margin-bottom: 25px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        background-color: white !important; color: #1E3A8A !important;
+        padding: 25px; border-radius: 15px; border-left: 10px solid #1E3A8A;
+        margin-bottom: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
 
-    /* Butonlar */
     .stButton>button {
-        background-color: white !important;
-        color: #1E3A8A !important;
-        border: 2px solid #1E3A8A !important;
-        font-weight: bold !important;
-        height: 4em !important;
-        transition: 0.3s;
+        background-color: white !important; color: #1E3A8A !important;
+        border: 2px solid #1E3A8A !important; font-weight: bold !important;
+        height: 4em !important; transition: 0.3s;
     }
-    .stButton>button:hover {
-        background-color: #1E3A8A !important;
-        color: white !important;
-    }
+    .stButton>button:hover { background-color: #1E3A8A !important; color: white !important; }
 
-    /* Analiz Kartları */
     .error-card {
-        background-color: #fff5f5 !important;
-        border: 1px solid #feb2b2 !important;
-        padding: 15px;
-        border-radius: 10px;
-        margin-bottom: 10px;
+        background-color: #ffffff !important; border: 2px solid #e53e3e !important;
+        padding: 20px; border-radius: 12px; margin-bottom: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    .question-number {
+        background-color: #e53e3e; color: white; padding: 2px 10px;
+        border-radius: 5px; font-size: 14px; font-weight: bold;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -167,8 +139,8 @@ if 'pg' not in st.session_state:
 
 # --- SAYFALAR ---
 if st.session_state.pg == "GIRIS":
-    st.markdown("<h3 style='color:#1E3A8A;'>ECDIS Sınav Modülüne Hoş Geldiniz</h3>", unsafe_allow_html=True)
-    mode = st.radio("Soru Sıralaması:", ["Sabit (Sıralı)", "Değişken (Karışık)"], index=0)
+    st.markdown("<h3 style='text-align:center;'>ECDIS Eğitim Modülü</h3>", unsafe_allow_html=True)
+    mode = st.radio("Soru Sıralaması:", ["Sabit (Sıralı)", "Değişken (Karışık)"], index=0, horizontal=True)
     
     if st.button("SINAVI BAŞLAT"):
         st.session_state.quiz = get_quiz(mode == "Değişken (Karışık)")
@@ -186,9 +158,16 @@ elif st.session_state.pg == "SINAV":
     L = ["A", "B", "C", "D"]
     for i, o in enumerate(curr['opts']):
         if st.button(f"{L[i]}) {o}", key=f"btn_{st.session_state.idx}_{i}"):
-            correct = (o == curr['c'])
-            if correct: st.session_state.score += 1
-            st.session_state.log.append({"q": curr['q'], "u": o, "c": curr['c'], "is": correct})
+            is_correct = (o == curr['c'])
+            if is_correct: st.session_state.score += 1
+            # Log kaydına gerçek soru numarasını (idx+1) ekliyoruz
+            st.session_state.log.append({
+                "num": st.session_state.idx + 1,
+                "q": curr['q'], 
+                "u": o, 
+                "c": curr['c'], 
+                "is": is_correct
+            })
             
             if st.session_state.idx + 1 < len(st.session_state.quiz):
                 st.session_state.idx += 1
@@ -197,33 +176,33 @@ elif st.session_state.pg == "SINAV":
             st.rerun()
 
 else: # ANALIZ SAYFASI
-    st.markdown("<h2 style='color:#1E3A8A;'>Sınav Analiz Raporu</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; color:#1E3A8A;'>Sınav Analiz Raporu</h2>", unsafe_allow_html=True)
     total = len(st.session_state.quiz)
     perc = (st.session_state.score / total) * 100
     
-    # KUTLAMA EFEKTİ
     if perc >= 80:
         st.balloons()
-        st.snow() # Havai fişek etkisi için kar tanesi/konfeti karışımı
+        st.snow()
         st.success(f"TEBRİKLER! %{perc:.1f} Başarı ile Modülü Tamamladınız! ⚓🌟")
     
     c1, c2 = st.columns(2)
     c1.metric("Doğru Sayısı", f"{st.session_state.score} / {total}")
     c2.metric("Başarı Oranı", f"%{perc:.1f}")
     
-    st.markdown("<hr>", unsafe_allow_html=True)
-    st.markdown("<h4 style='color:#1E3A8A;'>Hatalı Sorular ve Çözümleri:</h4>", unsafe_allow_html=True)
+    st.divider()
+    st.markdown("<h4 style='color:#1E3A8A;'>Hatalı Soruların Detaylı Analizi:</h4>", unsafe_allow_html=True)
     
     errors = [x for x in st.session_state.log if not x["is"]]
     if not errors:
         st.success("Mükemmel! Hiç hata yapmadınız.")
     else:
-        for i, err in enumerate(errors):
+        for err in errors:
             st.markdown(f"""
                 <div class="error-card">
-                    <b style="color:#c53030;">Soru: {err['q']}</b><br>
-                    <span style="color:#000;">Sizin Cevabınız: <span style="color:red;">{err['u']}</span></span><br>
-                    <span style="color:#000;">Doğru Cevap: <span style="color:green; font-weight:bold;">{err['c']}</span></span>
+                    <span class="question-number">Soru {err['num']}</span><br><br>
+                    <b style="color:#000; font-size:18px;">{err['q']}</b><br><br>
+                    <div style="color:#000;">❌ Sizin Cevabınız: <span style="color:#e53e3e; font-weight:bold;">{err['u']}</span></div>
+                    <div style="color:#000;">✅ Doğru Cevap: <span style="color:#38a169; font-weight:bold;">{err['c']}</span></div>
                 </div>
             """, unsafe_allow_html=True)
 
