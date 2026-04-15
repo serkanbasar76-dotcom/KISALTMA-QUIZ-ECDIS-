@@ -49,113 +49,116 @@ data = [
     {"abbr": "XTD", "eng": "Cross Track Distance", "tr": "Rotadan Sapma Değeri"}
 ]
 
-# --- SAYFA AYARLARI ---
-st.set_page_config(page_title="Başar Teknik Eğitim", page_icon="⚓")
+st.set_page_config(page_title="Başar Teknik Eğitim", layout="centered")
 
-# CSS: En güvenli hale getirildi (Karanlık Mod uyumlu ama lacivert ağırlıklı)
+# Minimal ve Garanti Stil
 st.markdown("""
     <style>
-    .big-font { font-size:24px !important; font-weight: bold; color: #1E3A8A; }
-    .logo-header { background-color: #1E3A8A; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 20px; }
-    .logo-header h1 { color: white !important; margin: 0; }
-    .stButton>button { width: 100%; border-radius: 5px; height: 3em; font-weight: bold; }
-    div[data-testid="stExpander"] { background-color: white; border-radius: 10px; }
+    .stButton>button { width: 100%; height: 3.5em; font-weight: bold; margin-bottom: 5px; }
+    h1, h2, h3 { text-align: center; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- LOGO ---
-st.markdown('<div class="logo-header"><h1>⚓ BAŞAR TEKNİK EĞİTİM</h1></div>', unsafe_allow_html=True)
+# Logo Alanı
+st.title("⚓ BAŞAR TEKNİK EĞİTİM")
+st.divider()
 
 # --- SORU ÜRETİCİ ---
-def generate_questions(shuffle_mode):
-    temp_data = data.copy()
-    if shuffle_mode:
-        random.shuffle(temp_data)
+def generate_quiz(is_shuffled):
+    pool = data.copy()
+    if is_shuffled:
+        random.shuffle(pool)
     
-    quiz = []
-    formats = ["tr-abbr", "abbr-tr", "abbr-eng", "eng-abbr", "eng-tr", "tr-eng"]
+    questions = []
+    # 6 farklı kombinasyon türü
+    types = ["tr-abbr", "abbr-tr", "abbr-eng", "eng-abbr", "eng-tr", "tr-eng"]
     
-    for i, item in enumerate(temp_data):
-        fmt = formats[i % len(formats)]
-        if fmt == "tr-abbr": q, c, k = f"'{item['tr']}' kısaltması nedir?", item['abbr'], 'abbr'
-        elif fmt == "abbr-tr": q, c, k = f"'{item['abbr']}' Türkçe karşılığı nedir?", item['tr'], 'tr'
-        elif fmt == "abbr-eng": q, c, k = f"'{item['abbr']}' İngilizce açılımı nedir?", item['eng'], 'eng'
-        elif fmt == "eng-abbr": q, c, k = f"'{item['eng']}' kısaltması nedir?", item['abbr'], 'abbr'
-        elif fmt == "eng-tr": q, c, k = f"'{item['eng']}' Türkçe karşılığı nedir?", item['tr'], 'tr'
-        else: q, c, k = f"'{item['tr']}' İngilizce açılımı nedir?", item['eng'], 'eng'
-        
+    for i, item in enumerate(pool):
+        t = types[i % len(types)]
+        if t == "tr-abbr": q, c, k = f"'{item['tr']}' kısaltması nedir?", item['abbr'], 'abbr'
+        elif t == "abbr-tr": q, c, k = f"'{item['abbr']}' Türkçe karşılığı nedir?", item['tr'], 'tr'
+        elif t == "abbr-eng": q, c, k = f"'{item['abbr']}' İngilizce açılımı nedir?", item['eng'], 'eng'
+        elif t == "eng-abbr": q, c, k = f"'{item['eng']}' teriminin kısaltması nedir?", item['abbr'], 'abbr'
+        elif t == "eng-tr": q, c, k = f"'{item['eng']}' teriminin Türkçe karşılığı nedir?", item['tr'], 'tr'
+        else: q, c, k = f"'{item['tr']}' ifadesinin İngilizce açılımı nedir?", item['eng'], 'eng'
+
+        # Yanlış seçenekleri al
         wrong_pool = list(set([x[k] for x in data if x[k] != c]))
         options = random.sample(wrong_pool, 3) + [c]
         random.shuffle(options)
-        quiz.append({"q": q, "c": c, "options": options})
-    return quiz[:50]
+        questions.append({"question": q, "correct": c, "options": options})
+        
+    return questions[:50]
 
-# --- STATE ---
-if 'step' not in st.session_state:
-    st.session_state.step = "GIRIS"
-    st.session_state.score = 0
+# --- SESSION STATE ---
+if 'page' not in st.session_state:
+    st.session_state.page = "GIRIS"
     st.session_state.current_idx = 0
-    st.session_state.user_answers = []
+    st.session_state.score = 0
+    st.session_state.history = []
 
-# --- AKIŞ ---
-if st.session_state.step == "GIRIS":
-    st.write("### ECDIS Kısaltmaları Sınavına Hoş Geldiniz")
-    mode = st.radio("Soru Düzeni:", ["Sabit", "Değişken"])
-    if st.button("SINAVA BAŞLAT"):
-        st.session_state.questions = generate_questions(mode == "Değişken")
-        st.session_state.step = "SINAV"
+# --- AKIŞ YÖNETİMİ ---
+
+if st.session_state.page == "GIRIS":
+    st.header("ECDIS Sınav Modülü")
+    order = st.selectbox("Soru Sıralaması Seçin:", ["Sabit", "Değişken"])
+    if st.button("SINAVA BAŞLA"):
+        st.session_state.quiz = generate_quiz(order == "Değişken")
+        st.session_state.page = "SINAV"
         st.rerun()
 
-elif st.session_state.step == "SINAV":
+elif st.session_state.page == "SINAV":
     idx = st.session_state.current_idx
-    total = len(st.session_state.questions)
-    q_data = st.session_state.questions[idx]
+    q = st.session_state.quiz[idx]
     
-    # Soru Sayacı
-    st.info(f"Soru: {idx + 1} / {total}")
-    st.progress((idx + 1) / total)
+    # Soru Bilgisi
+    st.subheader(f"Soru {idx + 1} / {len(st.session_state.quiz)}")
+    st.progress((idx + 1) / len(st.session_state.quiz))
     
-    # Soru Metni
-    st.markdown(f"### {q_data['q']}")
+    st.info(q["question"])
     
-    # Şıklar
-    for opt in q_data['options']:
-        if st.button(opt, key=f"btn_{idx}_{opt}"):
-            is_correct = (opt == q_data['c'])
+    # Şıklar (A, B, C, D eklenmiş hali)
+    labels = ["A", "B", "C", "D"]
+    for i, opt in enumerate(q["options"]):
+        if st.button(f"{labels[i]}) {opt}", key=f"btn_{idx}_{i}"):
+            is_correct = (opt == q["correct"])
             if is_correct: st.session_state.score += 1
-            st.session_state.user_answers.append({
-                "question": q_data['q'],
+            
+            st.session_state.history.append({
+                "q": q["question"],
                 "user": opt,
-                "correct": q_data['c'],
+                "correct": q["correct"],
                 "is_correct": is_correct
             })
             
-            if idx + 1 < total:
+            if idx + 1 < len(st.session_state.quiz):
                 st.session_state.current_idx += 1
             else:
-                st.session_state.step = "ANALIZ"
+                st.session_state.page = "ANALIZ"
             st.rerun()
 
-elif st.session_state.step == "ANALIZ":
-    st.success("## Sınav Tamamlandı!")
-    total_q = len(st.session_state.questions)
-    perc = (st.session_state.score / total_q) * 100
+elif st.session_state.page == "ANALIZ":
+    st.header("🏁 Sınav Sonucu")
     
-    st.subheader(f"Başarı Oranı: %{perc:.1f}")
-    st.write(f"Toplam {total_q} soruda {st.session_state.score} doğru yaptınız.")
+    total = len(st.session_state.quiz)
+    percent = (st.session_state.score / total) * 100
+    
+    col1, col2 = st.columns(2)
+    col1.metric("Doğru", f"{st.session_state.score} / {total}")
+    col2.metric("Başarı", f"%{percent:.1f}")
     
     st.divider()
-    st.write("### Hatalı Soruların Analizi")
+    st.subheader("Hatalı Soruların Analizi")
     
-    for i, ans in enumerate(st.session_state.user_answers):
-        if not ans["is_correct"]:
-            with st.expander(f"Soru {i+1} (Hatalı): {ans['question']}"):
-                st.write(f"**Sizin Cevabınız:** :red[{ans['user']}]")
-                st.write(f"**Doğru Cevap:** :green[{ans['correct']}]")
-        else:
-            # Doğru cevapları da istersen buraya ekleyebiliriz ama şimdilik sadece hataları gösteriyorum
-            pass
-
-    if st.button("YENİDEN DENE"):
+    # Analiz Sayfası - Okunabilirlik Garantili (Markdown kullanarak)
+    for i, item in enumerate(st.session_state.history):
+        if not item["is_correct"]:
+            # st.error kullanarak hem zemin rengini hem yazı rengini sistemin yönetmesini sağlıyoruz
+            st.error(f"**Soru {i+1}:** {item['q']}")
+            st.write(f"❌ **Sizin Cevabınız:** {item['user']}")
+            st.write(f"✅ **Doğru Cevap:** {item['correct']}")
+            st.markdown("---")
+            
+    if st.button("Ana Menüye Dön"):
         st.session_state.clear()
         st.rerun()
