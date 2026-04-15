@@ -51,15 +51,17 @@ data = [
 
 st.set_page_config(page_title="Başar Teknik Eğitim", layout="centered")
 
-# Minimal ve Garanti Stil
+# Tasarım İyileştirmeleri
 st.markdown("""
     <style>
-    .stButton>button { width: 100%; height: 3.5em; font-weight: bold; margin-bottom: 5px; }
-    h1, h2, h3 { text-align: center; }
+    .stButton>button { width: 100%; height: 3.5em; font-weight: bold; }
+    /* Radio buton etiketlerini daha görünür yap */
+    div[data-testid="stRadio"] > label { font-size: 20px !important; font-weight: bold; color: #1E3A8A !important; }
+    h1 { color: #1E3A8A; text-align: center; }
     </style>
     """, unsafe_allow_html=True)
 
-# Logo Alanı
+# Logo
 st.title("⚓ BAŞAR TEKNİK EĞİTİM")
 st.divider()
 
@@ -70,7 +72,6 @@ def generate_quiz(is_shuffled):
         random.shuffle(pool)
     
     questions = []
-    # 6 farklı kombinasyon türü
     types = ["tr-abbr", "abbr-tr", "abbr-eng", "eng-abbr", "eng-tr", "tr-eng"]
     
     for i, item in enumerate(pool):
@@ -82,7 +83,6 @@ def generate_quiz(is_shuffled):
         elif t == "eng-tr": q, c, k = f"'{item['eng']}' teriminin Türkçe karşılığı nedir?", item['tr'], 'tr'
         else: q, c, k = f"'{item['tr']}' ifadesinin İngilizce açılımı nedir?", item['eng'], 'eng'
 
-        # Yanlış seçenekleri al
         wrong_pool = list(set([x[k] for x in data if x[k] != c]))
         options = random.sample(wrong_pool, 3) + [c]
         random.shuffle(options)
@@ -97,13 +97,20 @@ if 'page' not in st.session_state:
     st.session_state.score = 0
     st.session_state.history = []
 
-# --- AKIŞ YÖNETİMİ ---
-
+# --- AKIŞ ---
 if st.session_state.page == "GIRIS":
-    st.header("ECDIS Sınav Modülü")
-    order = st.selectbox("Soru Sıralaması Seçin:", ["Sabit", "Değişken"])
+    st.write("### Soru Sıralaması Seçin:")
+    
+    # İstenen değişiklik: Sekme yerine açık seçenekler (Radio)
+    mode = st.radio(
+        label="Uygulama Modu",
+        options=["Sabit (Sıralı)", "Değişken (Karışık)"],
+        label_visibility="collapsed" # Başlığı gizleyip seçenekleri öne çıkarır
+    )
+    
+    st.write("") # Boşluk
     if st.button("SINAVA BAŞLA"):
-        st.session_state.quiz = generate_quiz(order == "Değişken")
+        st.session_state.quiz = generate_quiz(mode == "Değişken (Karışık)")
         st.session_state.page = "SINAV"
         st.rerun()
 
@@ -111,13 +118,11 @@ elif st.session_state.page == "SINAV":
     idx = st.session_state.current_idx
     q = st.session_state.quiz[idx]
     
-    # Soru Bilgisi
-    st.subheader(f"Soru {idx + 1} / {len(st.session_state.quiz)}")
+    st.write(f"**Soru {idx + 1} / {len(st.session_state.quiz)}**")
     st.progress((idx + 1) / len(st.session_state.quiz))
     
-    st.info(q["question"])
+    st.info(f"### {q['question']}")
     
-    # Şıklar (A, B, C, D eklenmiş hali)
     labels = ["A", "B", "C", "D"]
     for i, opt in enumerate(q["options"]):
         if st.button(f"{labels[i]}) {opt}", key=f"btn_{idx}_{i}"):
@@ -125,10 +130,7 @@ elif st.session_state.page == "SINAV":
             if is_correct: st.session_state.score += 1
             
             st.session_state.history.append({
-                "q": q["question"],
-                "user": opt,
-                "correct": q["correct"],
-                "is_correct": is_correct
+                "q": q["question"], "user": opt, "correct": q["correct"], "is_correct": is_correct
             })
             
             if idx + 1 < len(st.session_state.quiz):
@@ -138,22 +140,20 @@ elif st.session_state.page == "SINAV":
             st.rerun()
 
 elif st.session_state.page == "ANALIZ":
-    st.header("🏁 Sınav Sonucu")
-    
+    st.header("🏁 Sınav Tamamlandı")
     total = len(st.session_state.quiz)
     percent = (st.session_state.score / total) * 100
     
     col1, col2 = st.columns(2)
     col1.metric("Doğru", f"{st.session_state.score} / {total}")
-    col2.metric("Başarı", f"%{percent:.1f}")
+    col2.metric("Başarı Oranı", f"%{percent:.1f}")
     
     st.divider()
     st.subheader("Hatalı Soruların Analizi")
     
-    # Analiz Sayfası - Okunabilirlik Garantili (Markdown kullanarak)
     for i, item in enumerate(st.session_state.history):
         if not item["is_correct"]:
-            # st.error kullanarak hem zemin rengini hem yazı rengini sistemin yönetmesini sağlıyoruz
+            # st.error kullanarak okunabilirliği garantiliyoruz
             st.error(f"**Soru {i+1}:** {item['q']}")
             st.write(f"❌ **Sizin Cevabınız:** {item['user']}")
             st.write(f"✅ **Doğru Cevap:** {item['correct']}")
