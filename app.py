@@ -56,10 +56,65 @@ st.set_page_config(page_title="Başar Teknik Eğitim - ECDIS Quiz", page_icon="�
 # --- STİL ---
 st.markdown("""
     <style>
-    .main { background-color: #f0f2f6; }
-    .stButton>button { width: 100%; border-radius: 10px; height: 3em; font-size: 18px; margin-bottom: 10px; }
-    .logo-text { font-size: 40px !important; font-weight: bold; color: #1E3A8A; text-align: center; border: 3px solid #1E3A8A; padding: 10px; border-radius: 15px; background: white; margin-bottom: 20px;}
-    .question-box { background-color: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px;}
+    /* Ana Arkaplan */
+    .stApp {
+        background-color: #f4f7f9;
+    }
+    
+    /* Logo Tasarımı */
+    .logo-text { 
+        font-size: 36px !important; 
+        font-weight: 800; 
+        color: #ffffff; 
+        text-align: center; 
+        border: none;
+        padding: 20px; 
+        border-radius: 10px; 
+        background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    /* Soru Kutusu - Yazı Rengi Siyah/Lacivert olarak sabitlendi */
+    .question-box { 
+        background-color: #ffffff; 
+        padding: 35px; 
+        border-radius: 15px; 
+        border-left: 8px solid #1E3A8A;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
+        margin-bottom: 25px;
+    }
+    
+    .question-box h3 {
+        color: #1E3A8A !important; /* Yazı rengini zorla lacivert yapar */
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    /* Buton Tasarımları */
+    .stButton>button { 
+        width: 100%; 
+        border-radius: 8px; 
+        height: 3.5em; 
+        font-size: 16px; 
+        font-weight: 600;
+        background-color: #ffffff;
+        color: #1E3A8A;
+        border: 2px solid #1E3A8A;
+        transition: all 0.3s;
+    }
+
+    .stButton>button:hover {
+        background-color: #1E3A8A;
+        color: #ffffff;
+        border: 2px solid #1E3A8A;
+    }
+    
+    /* Metrik Paneli (Analiz Sayfası İçin) */
+    [data-testid="stMetricValue"] {
+        color: #1E3A8A !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
