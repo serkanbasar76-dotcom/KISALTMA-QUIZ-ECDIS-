@@ -50,212 +50,183 @@ data = [
     {"abbr": "XTD", "eng": "Cross Track Distance", "tr": "Rotadan Sapma Değeri"}
 ]
 
-st.set_page_config(page_title="Başar Eğitim Sistemi", layout="centered", page_icon="⚓")
+st.set_page_config(page_title="Başar Eğitim Sistemi", layout="centered")
 
-# --- GELİŞMİŞ TASARIM VE KUTLAMA EFEKTLERİ ---
+# --- KUVVETLİ KONTRAST CSS ---
 st.markdown("""
     <style>
-    /* Ana Arkaplan (Deniz Mavisi Tonları) */
-    .stApp {
-        background: linear-gradient(135deg, #f0f8ff 0%, #e6f2ff 100%);
-    }
+    /* Arka planı hafif gri-mavi yap ki beyaz kutular patlasın */
+    .stApp { background-color: #f0f2f6 !important; }
 
-    /* Başlık Alanı (Logo) - Lacivert Zeminli */
-    .header-box {
-        background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
-        padding: 25px;
-        border-radius: 15px;
+    /* Tüm temel metinleri koyu lacivert yap (Okunmama sorununu çözer) */
+    html, body, [class*="st-"] { color: #001f3f !important; font-weight: 500; }
+
+    /* Logo ve Başlık Tasarımı */
+    .header-container {
+        background: linear-gradient(90deg, #1E3A8A 0%, #3B82F6 100%);
+        padding: 30px;
+        border-radius: 20px;
         text-align: center;
-        margin-bottom: 30px;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-        border: 3px solid #ffffff;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        margin-bottom: 40px;
     }
-
-    /* Daire İçinde Çıpa Simgesi */
-    .circle-anchor {
+    .anchor-circle {
+        background: white;
+        color: #1E3A8A;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 60px;
-        height: 60px;
-        background-color: #ffffff;
-        border-radius: 50%;
-        color: #1E3A8A;
-        font-size: 30px;
-        font-weight: bold;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        margin: 0 15px;
+        font-size: 24px;
+        margin: 0 20px;
         vertical-align: middle;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .title-text {
+        color: white !important;
+        font-size: 28px !important;
+        font-weight: 900 !important;
+        vertical-align: middle;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
     }
 
-    /* Başlık Metni (Metin Değiştirildi) */
-    .header-text {
-        color: #ffffff !important;
-        font-size: 32px !important;
-        font-weight: 800 !important;
-        display: inline-block;
-        vertical-align: middle;
-        margin: 0;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+    /* Soru ve Bilgi Kutuları */
+    .question-box {
+        background-color: white !important;
+        color: #1E3A8A !important;
+        padding: 25px;
+        border-radius: 15px;
+        border-left: 10px solid #1E3A8A;
+        margin-bottom: 25px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
 
-    /* Buton Tasarımları */
+    /* Butonlar */
     .stButton>button {
-        width: 100%;
-        height: 3.5em;
-        font-weight: bold;
-        font-size: 16px;
-        border-radius: 10px;
-        background: #ffffff;
-        color: #1E3A8A;
-        border: 2px solid #1E3A8A;
-        transition: all 0.3s;
+        background-color: white !important;
+        color: #1E3A8A !important;
+        border: 2px solid #1E3A8A !important;
+        font-weight: bold !important;
+        height: 4em !important;
+        transition: 0.3s;
     }
-    
     .stButton>button:hover {
-        background: #1E3A8A;
-        color: #ffffff;
+        background-color: #1E3A8A !important;
+        color: white !important;
     }
 
-    /* Soru ve İlan Kutuları */
-    .stInfo, .stSuccess, .stError {
+    /* Analiz Kartları */
+    .error-card {
+        background-color: #fff5f5 !important;
+        border: 1px solid #feb2b2 !important;
+        padding: 15px;
         border-radius: 10px;
-        padding: 20px;
-    }
-    
-    h2, h3 { text-align: center; color: #1E3A8A; }
-
-    /* Konfeti Efekti (Konfeti patladığında arka planı şeffaf yapar) */
-    .confetti-active {
-        background-color: transparent !important;
+        margin-bottom: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- LOGO VE BAŞLIK ALANI (Yeni Tasarım) ---
-st.markdown(f"""
-    <div class="header-box">
-        <div class="circle-anchor">⚓</div>
-        <div class="header-text">BAŞAR EĞİTİM SİSTEMİ</div>
-        <div class="circle-anchor">⚓</div>
+# --- LOGO ALANI ---
+st.markdown("""
+    <div class="header-container">
+        <div class="anchor-circle">⚓</div>
+        <span class="title-text">BAŞAR EĞİTİM SİSTEMİ</span>
+        <div class="anchor-circle">⚓</div>
     </div>
     """, unsafe_allow_html=True)
 
-# --- SORU ÜRETİCİ ---
-def generate_quiz(is_shuffled):
+# --- FONKSİYONLAR ---
+def get_quiz(shuffle):
     pool = data.copy()
-    if is_shuffled:
-        random.shuffle(pool)
-    
-    questions = []
+    if shuffle: random.shuffle(pool)
+    quiz = []
     types = ["tr-abbr", "abbr-tr", "abbr-eng", "eng-abbr", "eng-tr", "tr-eng"]
-    
-    for i, item in enumerate(pool):
+    for i, item in enumerate(pool[:50]):
         t = types[i % len(types)]
         if t == "tr-abbr": q, c, k = f"'{item['tr']}' kısaltması nedir?", item['abbr'], 'abbr'
         elif t == "abbr-tr": q, c, k = f"'{item['abbr']}' Türkçe karşılığı nedir?", item['tr'], 'tr'
         elif t == "abbr-eng": q, c, k = f"'{item['abbr']}' İngilizce açılımı nedir?", item['eng'], 'eng'
-        elif t == "eng-abbr": q, c, k = f"'{item['eng']}' teriminin kısaltması nedir?", item['abbr'], 'abbr'
-        elif t == "eng-tr": q, c, k = f"'{item['eng']}' teriminin Türkçe karşılığı nedir?", item['tr'], 'tr'
-        else: q, c, k = f"'{item['tr']}' ifadesinin İngilizce açılımı nedir?", item['eng'], 'eng'
-
-        wrong_pool = list(set([x[k] for x in data if x[k] != c]))
-        options = random.sample(wrong_pool, 3) + [c]
-        random.shuffle(options)
-        questions.append({"question": q, "correct": c, "options": options})
+        elif t == "eng-abbr": q, c, k = f"'{item['eng']}' kısaltması nedir?", item['abbr'], 'abbr'
+        elif t == "eng-tr": q, c, k = f"'{item['eng']}' Türkçe karşılığı nedir?", item['tr'], 'tr'
+        else: q, c, k = f"'{item['tr']}' İngilizce açılımı nedir?", item['eng'], 'eng'
         
-    return questions[:50]
+        w_pool = list(set([x[k] for x in data if x[k] != c]))
+        opts = random.sample(w_pool, 3) + [c]
+        random.shuffle(opts)
+        quiz.append({"q": q, "c": c, "opts": opts})
+    return quiz
 
-# --- SESSION STATE ---
-if 'page' not in st.session_state:
-    st.session_state.page = "GIRIS"
-    st.session_state.current_idx = 0
+# --- STATE YÖNETİMİ ---
+if 'pg' not in st.session_state:
+    st.session_state.pg = "GIRIS"
     st.session_state.score = 0
-    st.session_state.history = []
+    st.session_state.idx = 0
+    st.session_state.log = []
 
-# --- AKIŞ YÖNETİMİ ---
-
-if st.session_state.page == "GIRIS":
-    st.header("ECDIS Sınav Modülü")
+# --- SAYFALAR ---
+if st.session_state.pg == "GIRIS":
+    st.markdown("<h3 style='color:#1E3A8A;'>ECDIS Sınav Modülüne Hoş Geldiniz</h3>", unsafe_allow_html=True)
+    mode = st.radio("Soru Sıralaması:", ["Sabit (Sıralı)", "Değişken (Karışık)"], index=0)
     
-    # Açık Seçenek Menüsü (İsteğiniz üzere st.radio ile yapıldı)
-    mode = st.radio(
-        "Soru Sıralaması Seçin:",
-        options=["Sabit (Sıralı)", "Değişken (Karışık)"],
-        horizontal=True # Seçenekleri yan yana gösterir, daha modern bir görünüm
-    )
-    
-    st.markdown("<br>", unsafe_allow_html=True) # Boşluk
-    if st.button("SINAVA BAŞLA", key="start_btn"):
-        st.session_state.quiz = generate_quiz(mode == "Değişken (Karışık)")
-        st.session_state.page = "SINAV"
+    if st.button("SINAVI BAŞLAT"):
+        st.session_state.quiz = get_quiz(mode == "Değişken (Karışık)")
+        st.session_state.pg = "SINAV"
         st.rerun()
 
-elif st.session_state.page == "SINAV":
-    idx = st.session_state.current_idx
-    q = st.session_state.quiz[idx]
+elif st.session_state.pg == "SINAV":
+    curr = st.session_state.quiz[st.session_state.idx]
     
-    st.subheader(f"Soru {idx + 1} / {len(st.session_state.quiz)}")
-    st.progress((idx + 1) / len(st.session_state.quiz))
+    st.markdown(f"<p style='color:#1E3A8A; font-weight:bold;'>Soru {st.session_state.idx + 1} / {len(st.session_state.quiz)}</p>", unsafe_allow_html=True)
+    st.progress((st.session_state.idx + 1) / len(st.session_state.quiz))
     
-    st.info(f"### {q['question']}")
+    st.markdown(f"<div class='question-box'><h3>{curr['q']}</h3></div>", unsafe_allow_html=True)
     
-    labels = ["A", "B", "C", "D"]
-    for i, opt in enumerate(q["options"]):
-        if st.button(f"{labels[i]}) {opt}", key=f"btn_{idx}_{i}"):
-            is_correct = (opt == q["correct"])
-            if is_correct: st.session_state.score += 1
+    L = ["A", "B", "C", "D"]
+    for i, o in enumerate(curr['opts']):
+        if st.button(f"{L[i]}) {o}", key=f"btn_{st.session_state.idx}_{i}"):
+            correct = (o == curr['c'])
+            if correct: st.session_state.score += 1
+            st.session_state.log.append({"q": curr['q'], "u": o, "c": curr['c'], "is": correct})
             
-            st.session_state.history.append({
-                "q": q["question"], "user": opt, "correct": q["correct"], "is_correct": is_correct
-            })
-            
-            if idx + 1 < len(st.session_state.quiz):
-                st.session_state.current_idx += 1
+            if st.session_state.idx + 1 < len(st.session_state.quiz):
+                st.session_state.idx += 1
             else:
-                st.session_state.page = "ANALIZ"
+                st.session_state.pg = "ANALIZ"
             st.rerun()
 
-elif st.session_state.page == "ANALIZ":
-    st.header("🏁 Sınav Tamamlandı")
-    
+else: # ANALIZ SAYFASI
+    st.markdown("<h2 style='color:#1E3A8A;'>Sınav Analiz Raporu</h2>", unsafe_allow_html=True)
     total = len(st.session_state.quiz)
-    percent = (st.session_state.score / total) * 100
+    perc = (st.session_state.score / total) * 100
     
-    # Konfeti Efekti Kontrolü (%80 Üstü)
-    if percent >= 80:
-        # Arka planı şeffaf yapıp konfeti ve balon patlatıyoruz
-        st.markdown('<style>.stApp { background-color: transparent !important; }</style>', unsafe_allow_html=True)
-        st.balloons() # Balonlar
-        # Havai fişek ve konfeti efekti (Streamlit'in varsayılanı konfetidir)
-        time.sleep(0.5)
-        st.success("MUHTEŞEM BİR BAŞARI! 🌟")
-        st.divider()
+    # KUTLAMA EFEKTİ
+    if perc >= 80:
+        st.balloons()
+        st.snow() # Havai fişek etkisi için kar tanesi/konfeti karışımı
+        st.success(f"TEBRİKLER! %{perc:.1f} Başarı ile Modülü Tamamladınız! ⚓🌟")
     
-    col1, col2 = st.columns(2)
-    col1.metric("Doğru", f"{st.session_state.score} / {total}")
-    col2.metric("Başarı Oranı", f"%{percent:.1f}")
+    c1, c2 = st.columns(2)
+    c1.metric("Doğru Sayısı", f"{st.session_state.score} / {total}")
+    c2.metric("Başarı Oranı", f"%{perc:.1f}")
     
-    if percent < 80:
-        st.info("Harika! Kendinizi daha da geliştirebilirsiniz.")
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.markdown("<h4 style='color:#1E3A8A;'>Hatalı Sorular ve Çözümleri:</h4>", unsafe_allow_html=True)
+    
+    errors = [x for x in st.session_state.log if not x["is"]]
+    if not errors:
+        st.success("Mükemmel! Hiç hata yapmadınız.")
     else:
-        st.divider()
+        for i, err in enumerate(errors):
+            st.markdown(f"""
+                <div class="error-card">
+                    <b style="color:#c53030;">Soru: {err['q']}</b><br>
+                    <span style="color:#000;">Sizin Cevabınız: <span style="color:red;">{err['u']}</span></span><br>
+                    <span style="color:#000;">Doğru Cevap: <span style="color:green; font-weight:bold;">{err['c']}</span></span>
+                </div>
+            """, unsafe_allow_html=True)
 
-    st.subheader("Hatalı Soruların Analizi")
-    
-    has_errors = False
-    for i, item in enumerate(st.session_state.history):
-        if not item["is_correct"]:
-            has_errors = True
-            st.error(f"**Soru {i+1}:** {item['q']}")
-            st.write(f"❌ **Sizin Cevabınız:** {item['user']}")
-            st.write(f"✅ **Doğru Cevap:** {item['correct']}")
-            st.markdown("---")
-            
-    if not has_errors:
-        st.success("Tebrikler! Hiç hata yapmadınız.")
-
-    if st.button("Ana Menüye Dön"):
+    if st.button("ANA MENÜYE DÖN"):
         st.session_state.clear()
         st.rerun()
